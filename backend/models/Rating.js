@@ -1,0 +1,16 @@
+const mongoose = require("mongoose");
+
+const ratingSchema = new mongoose.Schema(
+  {
+    ride: { type: mongoose.Schema.Types.ObjectId, ref: "Ride", required: true },
+    from: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // who is rating
+    to: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },   // who is being rated
+    score: { type: Number, min: 1, max: 5, required: true },
+    comment: String,
+  },
+  { timestamps: true }
+);
+
+ratingSchema.index({ ride: 1, from: 1 }, { unique: true });
+
+module.exports = mongoose.model("Rating", ratingSchema);

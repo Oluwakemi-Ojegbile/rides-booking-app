@@ -1,170 +1,104 @@
 # Ride Booking App
 
-Capstone project — a ride booking platform where users request rides, drivers accept trips, and both sides track ride status in real time.
+A role-based ride-booking MVP. Riders request, track, cancel, review history and rate completed trips; drivers manage vehicle availability, accept requests, progress a trip and review trip history.
 
-## Team & Feature Ownership
+## Stack
 
-| Name | Feature | Scope |
-|---|---|---|
-| **Ngozi** | Driver App | Full stack — driver-facing UI, driver backend routes, **and** the matching engine (finds nearest driver, alerts them) |
-| **Enoch** | Rider App | Full stack — rider-facing UI, rider backend routes, **and** the pricing engine, notifications, and ratings/reviews system |
-| **Oluwakemi** | Admin — Customer Management | Full stack — view/search/suspend riders, view a rider's ride history |
-| **Gideon** | Admin — Driver Management & Verification | Full stack — view/filter drivers, verification queue, approve/suspend drivers |
-| **Richard** | Admin — Rides Monitoring & Analytics | Full stack — live rides monitor, ride status log, analytics dashboard |
+- Frontend: React, Vite, React Router and Axios
+- Backend: Node.js, Express, Mongoose, JWT, bcrypt, Helmet, CORS and rate limiting
+- Database: MongoDB (local for development; MongoDB Atlas for production)
 
-The shared foundation (auth, database models, the ride status logic, and real-time updates) is already built and pushed to the repo. Nobody touches those files without flagging it in the group chat first — they affect everyone's work.
+## Features and lifecycle
 
----
+`requested → accepted → arrived → in_progress → completed`
 
-## Feature Breakdown by Side
+Riders may cancel `requested`, `accepted`, or `arrived` rides. Assigned drivers may cancel `accepted` or `arrived` rides. Completed and cancelled rides are immutable. The driver is returned to availability at the terminal state.
 
-Here's a complete breakdown by side, with the connections between them made explicit.
+## Layout
 
-### Rider-Side Features (Enoch)
-
-| Feature | Description | Connects To |
-|---|---|---|
-| Sign up / Login | Phone/email + OTP or password auth | Auth service (shared) |
-| Profile management | Name, photo, saved addresses, payment method | User DB (shared) |
-| Ride request | Set pickup + drop-off, choose ride type | Matching engine (Ngozi) |
-| Fare & ETA estimate | Shown before confirming request | Pricing engine (Enoch) + Maps API |
-| Driver matching wait screen | Shows "finding driver" state | Matching engine → notifies Driver app |
-| Live driver tracking | See driver's live location moving toward pickup | Location service (shared, real-time) |
-| Ride status updates | Accepted / arriving / started / completed | Status engine (shared) — same state machine Driver updates |
-| In-app chat/call (optional) | Contact driver directly | Messaging service (stretch goal) |
-| Cancel ride | Before or shortly after acceptance | Status engine → notifies Driver |
-| Payment | Charge on completion | Payment gateway (stretch goal) |
-| Rate & review driver | After trip ends | Ratings system (Enoch) → affects Driver profile |
-| Ride history | Past trips, receipts | User DB (shared) |
-
-### Driver-Side Features (Ngozi)
-
-| Feature | Description | Connects To |
-|---|---|---|
-| Sign up / Login + verification | ID, license, vehicle docs | Auth service + Admin approval (Gideon) |
-| Profile & vehicle info | Car details, plate number, documents | User DB (shared) |
-| Online/Offline toggle | Controls visibility to matching engine | Matching engine (Ngozi) |
-| Incoming ride request alert | Accept/reject within time window | Matching engine → pushed from Rider request |
-| Navigation to pickup/drop-off | Turn-by-turn directions | Maps API |
-| Update trip status | Arrived, started, completed | Status engine — same one Rider sees update live |
-| Live location broadcast | Sent continuously while on trip | Location service → streamed to Rider app |
-| Earnings dashboard | Per trip, daily, weekly totals | Payment/earnings DB (stretch goal) |
-| Trip history | Completed rides log | User DB (shared) |
-| Rate rider | After trip ends | Ratings system (Enoch) → affects Rider profile |
-| Cancel/reject ride | With reason | Status engine → notifies Rider |
-
-### Shared Backend Features (already built — do not duplicate)
-
-| Feature | Description | Used By |
-|---|---|---|
-| Authentication service | Issues tokens, manages sessions | Everyone |
-| User & Driver database | Stores all profile/account data | Everyone |
-| Ride state machine | Single source of truth for ride status | Everyone reads/writes to this |
-| Real-time location service | WebSocket broadcasting live GPS | Rider ↔ Driver |
-| Maps/Geolocation API integration | Routing, distance, ETA calculation | Rider app, Driver app, Matching engine |
-
-### Rider/Driver Backend Services (new — being built)
-
-| Feature | Owner | Description |
-|---|---|---|
-| Matching engine | Ngozi | Finds nearest available driver, sends request to Driver app |
-| Pricing engine | Enoch | Calculates fare estimate & final fare |
-| Notification service | Enoch | Push/in-app notifications triggered by every ride status change |
-| Ratings & reviews system | Enoch | Stores and aggregates ratings; feeds both Rider and Driver profiles |
-
-### Admin Dashboard — Split by Section
-
-| Section | Owner | Description |
-|---|---|---|
-| Customer Management | Oluwakemi | View/search riders, suspend accounts, view ride history per rider |
-| Driver Management & Verification | Gideon | View/filter drivers, verification queue, approve/suspend accounts |
-| Rides Monitoring & Analytics | Richard | Live rides view, ride status log, dashboard stats (totals, cancellation rate, active drivers) |
-
-All three share the same login screen and dashboard shell — agree on that shell together before splitting off into your own section, so the app doesn't end up as three disconnected pages.
-
----
-
-## How It All Connects (Flow Summary)
-
-```
-Rider requests ride
-   → Matching Engine (Ngozi) finds nearest online Driver
-   → Driver gets alert (Ngozi's Driver app)
-   → Driver accepts → Status Engine updates "accepted"
-   → Both apps subscribe to Location Service (live tracking begins)
-   → Driver updates status (arrived → started → completed)
-   → Status Engine pushes each update to Rider in real time
-   → On completion: Payment Gateway charges Rider, credits Driver
-   → Notification Service (Enoch) prompts both sides to rate each other → Ratings system updated
-   → Rides Monitoring (Richard) logs it in the admin live feed and analytics
+```text
+frontend/  React client, pages, API services, route guards and polling hook
+backend/   Express API, Mongoose models, validation, controllers and tests
 ```
 
-**Key principle:** Rider and Driver apps never talk to each other directly — everything routes through the shared backend (matching engine, status engine, location service). That's why the shared foundation was built first, and why changes to it need a heads-up in the group chat.
+MongoDB collections are `users`, `driverprofiles`, `rides`, and `ratings`. Unique indexes protect user email/phone, driver profile user/plate, and one rating per ride participant. Ride indexes support rider/driver status history and available-request queries.
 
----
+## Local setup
 
-## Platform & Stack
+1. Install Node.js 20+ and MongoDB 7+.
+2. Create `backend/.env`:
 
-**Responsive web app** — React + Vite + Tailwind CSS across all three apps, not native mobile.
-See [`docs/design-system.md`](docs/design-system.md) for why, plus the shared color palette and
-rules for keeping all three apps visually consistent.
-
-## Repository Structure
-
-```
-ride-booking-app/
-├── package.json                # npm workspaces root — run `npm install` here once
-├── backend/                    # REST API + WebSocket server
-│   └── src/
-│       ├── controllers/
-│       ├── models/                  # User, Ride, Rating — shared, don't duplicate
-│       ├── routes/
-│       │   ├── auth.routes.js            # done (shared)
-│       │   ├── ride.routes.js            # Ngozi + Enoch extend this
-│       │   ├── rating.routes.js          # Enoch — new
-│       │   └── admin/
-│       │       ├── customers.routes.js       # Oluwakemi
-│       │       ├── drivers.routes.js         # Gideon
-│       │       └── rides-analytics.routes.js # Richard
-│       ├── services/
-│       │   ├── rideStateMachine.js       # done (shared)
-│       │   ├── authService.js            # done (shared)
-│       │   ├── matchingEngine.js         # Ngozi — new
-│       │   ├── pricingEngine.js          # Enoch — new
-│       │   └── notificationService.js    # Enoch — new
-│       ├── sockets/                 # real-time location/status broadcasting (done)
-│       └── config/
-├── shared-ui/                  # design system — colors, fonts, Button/Input/Card/StatusBadge
-├── rider-app/                  # Enoch — rider-facing client app
-├── driver-app/                 # Ngozi — driver-facing client app
-├── admin-dashboard/            # split 3 ways
-│   └── src/
-│       ├── customers/               # Oluwakemi
-│       ├── drivers/                 # Gideon
-│       └── rides-analytics/         # Richard
-├── docs/                       # architecture notes, API spec, design system, meeting notes
-└── .github/                    # issue templates, CI workflows
+```env
+PORT=5001
+NODE_ENV=development
+MONGO_URI=mongodb://127.0.0.1:27017/ride_booking_app
+JWT_SECRET=replace-with-a-long-random-secret
+INVITATION_ENCRYPTION_KEY=replace-with-a-different-long-random-secret
+JWT_EXPIRES_IN=7d
+CLIENT_URL=http://localhost:5173
 ```
 
-## Getting Started
+3. Create `frontend/.env`:
+
+```env
+VITE_API_BASE_URL=http://localhost:5001/api
+```
+
+4. Install and run:
 
 ```bash
-npm install          # run once, from the repo root — installs every app + shared-ui together
-npm run dev:rider     # or dev:driver / dev:admin / dev:backend
+cd backend && npm install && npm run dev
+cd frontend && npm install && npm run dev
 ```
 
-Each subfolder has its own README with more detail. Backend is already runnable — see `backend/README.md`.
-UI components come from `shared-ui/` — see `shared-ui/README.md` before building your own.
+Seed development accounts (never production data):
 
-## Branching Convention
+```bash
+cd backend && npm run seed
+```
 
-- `main` — always deployable/demo-ready. Protected: direct pushes and merges are blocked for everyone except the repo owner.
-- `feature/<short-description>` — everyone branches off `main`, works, opens a PR back into `main`
-- PRs need at least 1 review before they can be merged; only the repo owner can complete the merge
-- Merge to `main` only once it's confirmed to run locally
+## Testing and checks
 
-## Docs
+```bash
+cd backend && npm test && npm run build
+cd frontend && npm run build
+```
 
-- [`docs/architecture.md`](docs/architecture.md) — system design & data flow
-- [`docs/api-spec.md`](docs/api-spec.md) — API contract between backend and all apps
-- [`docs/design-system.md`](docs/design-system.md) — platform decision, stack, colors, and UI rules
+The backend test cleanup helper only permits deletion with `NODE_ENV=test` and a database name containing `test`. Point integration tests at a dedicated URI such as `mongodb://127.0.0.1:27017/ride_booking_test`; never use the development or production database.
+
+## API
+
+All protected endpoints require `Authorization: Bearer <JWT>`.
+
+| Area | Endpoints |
+| --- | --- |
+| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout` |
+| Rides | `POST /api/rides`, `GET /api/rides/current`, `GET /api/rides/:id`, `GET /api/rides/history` |
+| Driver rides | `GET /api/rides/available`, `PATCH /api/rides/:id/accept`, `PATCH /api/rides/:id/arrive`, `PATCH /api/rides/:id/start`, `PATCH /api/rides/:id/complete`, `GET /api/drivers/rides/history` |
+| Shared actions | `PATCH /api/rides/:id/cancel`, `POST /api/ratings` |
+| Driver profile | `GET/PATCH /api/drivers/profile`, `PATCH /api/drivers/availability`, `PATCH /api/drivers/location` |
+| Administration | `GET /api/admin/overview`, `GET /api/admin/users`, `PATCH /api/admin/users/:id/status`, `POST /api/admin/invitations`, `GET /api/admin/rides` (admin only) |
+| Health | `GET /api/health` |
+
+History accepts `page`, `limit`, and an optional comma-separated `status` filter. Roles are enforced server-side; only ride participants can read/cancel a ride, and only its assigned driver can advance it.
+
+Administrators are never created through public registration. The initial development seed is a bootstrap account; signed-in administrators can create a single-use onboarding link for another administrator from the dashboard. Active links remain visible to administrators with a copy button until they are accepted or expire. Tokens are encrypted at rest with `INVITATION_ENCRYPTION_KEY` (or `JWT_SECRET` as a compatibility fallback); links should be shared via the organisation's secure channel. The development seed provides `admin.dev@example.com` with password `Oluwakemi@2`; change or remove this account outside development. Admins can inspect users and rides, filter platform data, and activate/deactivate accounts. Deactivating a driver also takes that driver offline.
+
+## MongoDB Atlas
+
+1. Create an Atlas project and free/shared cluster.
+2. Create a least-privilege database user and add your deployment IP/network access rule.
+3. Copy the SRV connection string into the backend host’s `MONGO_URI`; include the database name `ride_booking_app` or let the backend select it.
+4. Do not put `MONGO_URI` or a JWT secret in the frontend or Git.
+
+## Deployment
+
+- Deploy `frontend` to Vercel or Netlify, set `VITE_API_BASE_URL=https://<backend-url>/api`, and configure SPA fallback to `index.html`.
+- Deploy `backend` to Render or Railway. Set `NODE_ENV=production`, `MONGO_URI`, a long random `JWT_SECRET`, and `CLIENT_URL=https://<frontend-url>` in host-managed environment variables.
+- The API starts only after MongoDB connects. `GET /api/health` reports a safe connection status.
+
+The OpenAPI source is [docs/openapi.yaml](docs/openapi.yaml). Placeholders: frontend URL `https://<frontend-url>`, backend URL `https://<backend-url>`, API documentation URL `https://<backend-url>/api/docs`.
+
+## Production notes
+
+Helmet, CORS allow-listing, JWT role checks, request rate limiting and a 100 KB JSON limit are enabled. Use HTTPS at the hosting provider. The app does not delete any normal-startup data.

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 188 44" role="img" aria-labelledby="title">
+  <title id="title">Ride Booking</title>
+  <path fill="#135cc8" d="M22 2C13.2 2 6 9.1 6 17.9c0 11.6 16 24.1 16 24.1s16-12.5 16-24.1C38 9.1 30.8 2 22 2Zm0 22.4a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13Z"/>
+  <path fill="none" stroke="#1d7e44" stroke-linecap="round" stroke-width="4" d="M45 31c8-8 16-8 24 0s16 8 24 0"/>
+  <circle cx="93" cy="31" r="3" fill="#f6c744"/>
+  <text x="105" y="28" fill="#172033" font-family="Arial, sans-serif" font-size="17" font-weight="700">Ride</text>
+  <text x="105" y="42" fill="#135cc8" font-family="Arial, sans-serif" font-size="12" font-weight="700">BOOKING</text>
+</svg>

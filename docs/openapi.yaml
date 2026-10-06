@@ -1,0 +1,91 @@
+openapi: 3.0.3
+info:
+  title: Ride Booking API
+  version: 1.0.0
+  description: JWT-protected API for rider and driver ride lifecycle flows.
+servers:
+  - url: http://localhost:5001/api
+paths:
+  /auth/register:
+    post:
+      summary: Register a rider or driver
+      responses: { '201': { description: Account created } }
+  /auth/login:
+    post:
+      summary: Log in and receive a JWT
+      responses: { '200': { description: Authenticated } }
+  /auth/logout:
+    post:
+      summary: Log out the authenticated client
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Logged out } }
+  /rides:
+    post:
+      summary: Rider creates a ride request
+      security: [{ bearerAuth: [] }]
+      responses: { '201': { description: Ride requested } }
+  /rides/{id}:
+    get:
+      summary: Ride participant retrieves safe ride details
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Ride } }
+  /rides/{id}/accept:
+    patch:
+      summary: Available driver accepts a requested ride
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Ride accepted } }
+  /rides/{id}/arrive:
+    patch:
+      summary: Assigned driver marks an accepted ride arrived
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Ride arrived } }
+  /rides/{id}/start:
+    patch:
+      summary: Assigned driver starts an arrived ride
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Trip started } }
+  /rides/{id}/complete:
+    patch:
+      summary: Assigned driver completes an in-progress trip
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Trip completed } }
+  /rides/{id}/cancel:
+    patch:
+      summary: Connected rider or assigned driver cancels when permitted
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Ride cancelled } }
+  /rides/history:
+    get:
+      summary: Rider history with page, limit and status filters
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Paginated history } }
+  /drivers/rides/history:
+    get:
+      summary: Driver history with page, limit and status filters
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Paginated history } }
+  /admin/overview:
+    get:
+      summary: Retrieve platform metrics and recent rides
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Admin overview }, '403': { description: Admin role required } }
+  /admin/users:
+    get:
+      summary: List users with role and active-status filters
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Paginated users }, '403': { description: Admin role required } }
+  /admin/users/{id}/status:
+    patch:
+      summary: Activate or deactivate a user account
+      security: [{ bearerAuth: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { '200': { description: Account status updated }, '400': { description: Invalid request }, '403': { description: Admin role required } }
+  /admin/rides:
+    get:
+      summary: List rides with status filtering
+      security: [{ bearerAuth: [] }]
+      responses: { '200': { description: Paginated rides }, '403': { description: Admin role required } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
