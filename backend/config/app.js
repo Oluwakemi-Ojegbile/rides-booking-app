@@ -2,6 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const fs = require("fs");
+const path = require("path");
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yaml");
 
 const authRoutes = require("../routes/auth.routes");
 const driverRoutes = require("../routes/driver.routes");
@@ -11,6 +15,9 @@ const adminRoutes = require("../routes/admin.routes");
 const { getDatabaseStatus } = require("./database");
 const { sendSuccess } = require("../services/apiResponse");
 const { notFoundHandler, errorHandler } = require("../middleware/error.middleware");
+
+const openApiPath = path.join(__dirname, "../../docs/openapi.yaml");
+const openApiDocument = YAML.parse(fs.readFileSync(openApiPath, "utf8"));
 
 const defaultAllowedOrigins = [
   "http://localhost:5173",
@@ -74,6 +81,8 @@ function createApp() {
     });
   });
   app.get("/health", (req, res) => res.redirect("/api/health"));
+  app.get("/api/openapi.yaml", (req, res) => res.sendFile(openApiPath));
+  app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
   app.use("/api/auth", authRoutes);
   app.use("/api/drivers", driverRoutes);

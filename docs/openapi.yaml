@@ -4,7 +4,7 @@ info:
   version: 1.0.0
   description: JWT-protected API for rider and driver ride lifecycle flows.
 servers:
-  - url: http://localhost:5001/api
+  - url: /api
 paths:
   /auth/register:
     post:
